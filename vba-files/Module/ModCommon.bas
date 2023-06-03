@@ -51,10 +51,18 @@ Public Sub btnMakeSQL_Click()
     Call MakeBatchSQL(ActiveSheet)
     
 End Sub
+
+' ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+' Brief : SQLを連続実行してシートにデータを貼り付け
+' Note  :
+' ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 Public Sub btnExecSQL_Click()
     Dim batchSQLList As New Collection
-    Call FillBatchSQL(ActiveSheet, batchSQLList)
-    Call ShowBatchResult(Sheet6, batchSQLList)
+
+    Call FillBatchSQL(ThisWorkbook.Worksheets("BatchQuery"), batchSQLList)
+    
+    ' 各シートにSQL実行結果を出力
+    Call OutputResult(batchSQLList)
 End Sub
 
 Private Sub MakeBatchSQL(thisSHeet As Worksheet)
@@ -237,6 +245,60 @@ Private Sub ShowBatchResult(thisSHeet As Worksheet, batchSQLList As Collection)
     Next
 End Sub
 
+' ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+' Brief : 各シートにSQL実行結果を出力
+' Note  :
+' ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+Private Sub OutputResult(batchSQLList As Collection)
+
+    Dim r As Long
+    Dim sqlinfo As ClsSQL
+
+    Dim thisSheet As Worksheet
+    Dim thisTable As ListObject
+    
+    Dim x As Long
+    Dim dt As New ClsDataTable
+
+    For Each sqlinfo In batchSQLList
+
+        CreateSheetIfNotExists(sqlinfo.id)
+        set thisSheet = ThisWorkbook.Worksheets(sqlinfo.id)
+
+        ' テーブルのデータをクリア
+        set thisTable = GetTableFromCell(thisSheet.Name, "A1")
+        If Not thisTable.DataBodyRange Is Nothing Then
+            If Not thisTable.DataBodyRange Is Nothing Then
+                thisTable.DataBodyRange.delete
+            End If
+        End If
+
+        If sqlinfo.isSelect Then
+            dt.Fill sqlinfo.Result
+            r = 1
+            For x = 1 To dt.ColumnNames.count
+                thisSheet.Cells(r, x) = dt.ColumnNames(x)
+            Next
+
+            For y = 1 To dt.DataRows.count
+                r = r + 1
+                On Error Resume Next
+                For x = 1 To dt.ColumnNames.count
+                    thisSheet.Cells(r, x) = dt.DataRows(y)(x)
+                    If Err.Number <> 0 Then
+                        Exit For
+                    End If
+                Next
+                If Err.Number <> 0 Then
+                    sqlinfo.ErrMsg = Err.Description
+                    Exit For
+                End If
+            Next
+            r = r + 1
+        End If
+        r = r + 1
+    Next
+End Sub
 
 Public Sub SplitToDictionary(source As String, Map As Dictionary, Optional isTrim As Boolean = False)
     Dim ms() As String
