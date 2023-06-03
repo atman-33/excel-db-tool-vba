@@ -1,7 +1,9 @@
+Attribute VB_Name = "ModHelper"
+
 Sub CreateSheetIfNotExists(sheetName As String)
     Dim ws As Worksheet
     Dim sheetExists As Boolean
-    
+        
     sheetExists = False
     
     ' シートが存在するか確認する
