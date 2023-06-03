@@ -1,4 +1,5 @@
 Attribute VB_Name = "ModCommon"
+
 Dim tabInfo As New ClsTable
 Public dbinfo As New ClsDBInfo
 
